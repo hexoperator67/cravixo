@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { stripe, isStripeConfigured } from "@/lib/stripe";
+import { getStripe, isStripeConfigured } from "@/lib/stripe";
 
 const checkoutSchema = z.object({
   orderId: z.string().min(1),
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   }
 
   const sessionUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-
+  const stripe = getStripe();
   try {
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "payment",
