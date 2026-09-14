@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String?
+  role         String   @default("customer")
+  image        String?
+  phone        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orders       Order[]
+  riderOrders  Order[]  @relation("RiderOrders")
+  ownedRestaurant Restaurant?
+  addresses    Address[]
+  accounts     Account[]
+  sessions     Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}
+
+model Restaurant {
+  id                    String         @id @default(cuid())
+  name                  String
+  slug                  String         @unique
+  description           String?
+  image                 String?
+  coverImage            String?
+  address               String
+  phone                 String
+  email                 String
+  isActive              Boolean        @default(true)
+  rating                Float          @default(0)
+  totalRatings          Int            @default(0)
+  estimatedDeliveryTime Int            @default(30)
+  minimumOrder          Int            @default(0)
+  openingTime           String?
+  closingTime           String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  ownerId               String         @unique
+  owner                 User           @relation(fields: [ownerId], references: [id])
+  categories            MenuCategory[]
+  items                 MenuItem[]
+  orders                Order[]
+}
+
+model MenuCategory {
+  id           String      @id @default(cuid())
+  name         String
+  description  String?
+  sortOrder    Int         @default(0)
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items        MenuItem[]
+}
+
+model MenuItem {
+  id              String       @id @default(cuid())
+  name            String
+  description     String?
+  price           Int
+  image           String?
+  isAvailable     Boolean      @default(true)
+  isVegetarian    Boolean      @default(false)
+  isVegan         Boolean      @default(false)
+  isGlutenFree    Boolean      @default(false)
+  spiceLevel      Int          @default(0)
+  preparationTime Int?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  restaurantId    String
+  restaurant      Restaurant   @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  categoryId      String
+  category        MenuCategory @relation(fields: [categoryId], references: [id])
+  orderItems      OrderItem[]
+}
+
+model Order {
+  id                    String      @id @default(cuid())
+  orderNumber           String      @unique
+  status                String      @default("pending")
+  subtotal              Int
+  deliveryFee           Int         @default(0)
+  tax                   Int         @default(0)
+  total                 Int
+  deliveryAddress       String
+  specialInstructions   String?
+  estimatedDeliveryTime DateTime?
+  actualDeliveryTime    DateTime?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  userId                String
+  user                  User        @relation(fields: [userId], references: [id])
+  restaurantId          String
+  restaurant            Restaurant  @relation(fields: [restaurantId], references: [id])
+  riderId               String?
+  rider                 User?       @relation("RiderOrders", fields: [riderId], references: [id])
+  items                 OrderItem[]
+  payment               Payment?
+}
+
+model OrderItem {
+  id                  String    @id @default(cuid())
+  quantity            Int
+  price               Int
+  subtotal            Int
+  specialInstructions String?
+  orderId             String
+  order               Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId          String
+  menuItem            MenuItem  @relation(fields: [menuItemId], references: [id])
+}
+
+model Payment {
+  id                    String   @id @default(cuid())
+  stripeSessionId       String?  @unique
+  stripePaymentIntentId String?
+  status                String   @default("pending")
+  amount                Int
+  currency              String   @default("usd")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  orderId               String   @unique
+  order                 Order    @relation(fields: [orderId], references: [id])
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  label     String  @default("Home")
+  street    String
+  city      String
+  state     String?
+  zipCode   String
+  country   String  @default("US")
+  isDefault Boolean @default(false)
+  latitude  Float?
+  longitude Float?
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

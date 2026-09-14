@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local dev database
+prisma/*.db
+
+# AI tool skill caches
+.agents/
+.claude/
+.cursor/
+.devin/

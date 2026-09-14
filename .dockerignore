@@ -1,0 +1,8 @@
+.next
+node_modules
+.git
+src/app/api/test-*.ts
+prisma/dev.db
+.env*
+Dockerfile
+.vercel
